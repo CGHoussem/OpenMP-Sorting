@@ -8,6 +8,9 @@ School project developed using C and Python.
 
     # Create the virtual environement (venv)
     $ python3 -m venv venv
+    
+    # Activating the virtual environement
+    $ source venv/bin/activate
 
     # Install required python modules
     (venv)$ pip install -r requirements.txt
