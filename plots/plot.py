@@ -77,15 +77,15 @@ def draw_plot(n:int, k:int, nk:int, nk_perf:defaultdict):
 
 if __name__ == "__main__":
     
-    # Tk().withdraw()
-    # filename = askopenfilename()
+    Tk().withdraw()
+    filename = askopenfilename()
 
     g_perf = dict()
     
     nk_var_counter = 0 # --> 4
     nk_counter = 0 # --> 12
 
-    with open("../src/performances.csv", 'r') as csvfile:
+    with open(filename, 'r') as csvfile:
         data = csv.DictReader(csvfile, delimiter=',')
         for row in data:
             nk_var_counter += 1
