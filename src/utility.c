@@ -1,28 +1,10 @@
+#include "utility.h"
+
 #include "stdio.h"
 #include "stdlib.h"
+#include "string.h"
 #include "time.h"
 #include "omp.h"
-#include "string.h"
-
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#define MAX(a,b) (((a)>(b))?(a):(b))
-
-#define DEBUG   0
-
-
-typedef struct performance_measures {
-    float generating_span;
-    float sorting_span;
-    float total_span;
-} performance_measures;
-
-
-performance_measures get_performance_measures(int n, int k, int nb_threads);
-
-void create_tests_file(char* filename, int nk[][2], int nk_size, int nb_threads[]);
-
-
-void d_dump_db(float** db, int n, int k);
 
 /**
  * This function swaps two float pointers.
@@ -109,7 +91,7 @@ void tri_merge(float* bloc1, float* bloc2, int k) {
  * @param k: the count of the generated numbers
  **/
 float* generator(int k) {
-    float* bloc = malloc(sizeof(float) * k);
+    float* bloc = (float*) malloc(sizeof(float) * k);
 
     for (int i = 0; i < k; i++){
         *(bloc+i) = (float)rand()/RAND_MAX;
@@ -131,71 +113,66 @@ void free_db(float** db, int n) {
     free(db);
 }
 
-
 /**
- * This functions sorts a database in a parallel way.
+ * This function sorts a database in a parallel way.
  * 
  * @param db: The database to be sorted
  * @param n: The number of rows of the database
  * @param k: the size of each row of the database
  ***/ 
 float** parallel_sort(float** db, int n, int k) {
-    int k_copie = k;
+    // Creating a copy of the db
+    float** temp = (float**) malloc(sizeof(float*) * n);
+    for (int i = 0; i < n; i++) {
+        float* bloc = (float*) malloc(sizeof(float) * k);
+        for (int j = 0; j < k; j++) {
+            *(bloc+j) = db[i][j];
+        }
+        *(temp+i) = bloc;
+    }
+
     #pragma omp parallel for
     for (int i = 0; i < n; i++) tri(*(db+i), k);
 
     for (int j = 0; j < n; j++) {
-        int k = 1 + (j % 2);
+        int bi = 1 + (j % 2);
         #pragma omp parallel for
         for (int i = 0; i < n/2; i++) {
-            int b1 = (k + 2 * i) % n;
-            int b2 = (k + 2 * i+1) % n;
+            int b1 = (bi + 2 * i) % n;
+            int b2 = (bi + 2 * i+1) % n;
             int min = MIN(b1, b2);
             int max = MAX(b1, b2);
             #if DEBUG==1
-            printf("merge db[%d] et db[%d]\n", min, max);
+            printf("\tmerging lines %d & %d\n", min, max);
             #endif
-            tri_merge(*(db+min), *(db+max), k_copie);
+            tri_merge(*(temp+min), *(temp+max), k);
         }
     }
+    return temp;
 }
 
-
-int main(int argc, char** argv) {
-    int nk[4][2] = 
-    {
-        {10, 10}, {100, 100}, {250, 250}, {500, 500},
-        // {1000, 1000}, {10000, 10000},
-        // {500, 500}, {500, 750}, {750, 500}, {750, 750},
-        // {1000, 1000}, {1000, 2500}, {2500, 1000}, {2500, 2500},
-        // {5000, 5000}, {5000, 7500}, {7500, 5000}, {7500, 7500},
-        // {10000, 10000}, {10000, 15000}, {15000, 10000}
-    };
-    int nb_threads[6] = {1, 2, 4, 6, 8, 16};
-    char name[100];
-    strcpy(name, argv[1]);
-
-    create_tests_file(name, nk, 4, nb_threads);
-
-    return EXIT_SUCCESS;
-}
-
-
-void create_tests_file(char* filename, int nk[][2], int nk_size, int nb_threads[]) {
-    printf("Creating %s.csv file...\n", filename);
+/**
+ * This function generates the statistics of the algorithms in a csv file.
+ * 
+ * @param filename: The output filename
+ * @param nk: The matrix NxK (database)
+ * @param nk_size: The size of the database
+ * @param nb_threads: The threads table [1, 2, 4, 8]
+ * @param nb_threads_size: The size of the threads table 
+ ***/ 
+void generate_performances(char* filename, int nk[][2], int nk_size, int nb_threads[], int nb_threads_size) {
+    printf("Creating %s...\n", filename);
     FILE* fp = NULL;
-    filename = strcat(filename, ".csv");
     fp = fopen(filename, "w");
-    // fprintf(fp, "TestID,\tN,\tK,\tNxK,\t#Threads,\tGenerating,\tSorting\tTotal\n");
-    int test_id = 1;
+    fprintf(fp, "N,K,NxK,#Threads,Generating,Sorting,Total\n");
     for (int i = 0; i < nk_size; i++) {
         int n = nk[i][0];
         int k = nk[i][1];
-        for (int j = 0; j < 6; j++) {
+        for (int j = 0; j < nb_threads_size; j++) {
             int nb_th = nb_threads[j];
             printf("Executing N:%d, K:%d, TH:%d...\n", n, k, nb_th);
             performance_measures pm = get_performance_measures(n, k, nb_th);
-            fprintf(fp, "%d,\t%d,\t%d,\t%d,\t%d,\t%f,\t%f,\t%f\n", test_id++, n, k, n*k, nb_th, pm.generating_span, pm.sorting_span, pm.total_span);
+            fprintf(fp, "%d,%d,%d,%d,%f,%f,%f\n", n, k, n*k, nb_th, pm.generating_span, pm.sorting_span, pm.total_span);
         }
     }
     fclose(fp);
@@ -218,18 +195,25 @@ performance_measures get_performance_measures(int n, int k, int nb_threads) {
     pm.generating_span = t2 - t1;
 
     t1 = omp_get_wtime();
-    parallel_sort(db, n, k);
+    float** sorted_db = parallel_sort(db, n, k);
     t2 = omp_get_wtime();
 
     pm.sorting_span = t2 - t1;
-
     pm.total_span = pm.generating_span + pm.sorting_span;
 
+    // print the difference between tables
+    #if DEBUG==1
+    printf("UNSORTED DATABASE\n");
+    d_dump_db(db, n, k);
+    printf("-----------------------------------\n");
+    printf("SORTED DATABASE\n");
+    d_dump_db(sorted_db, n, k);
+    #endif
+
+    free_db(sorted_db, n);
     free_db(db, n);
     return pm;
 }
-
-
 
 void d_dump_db(float** db, int n, int k) {
     for (int i = 0; i < n; i++) {
@@ -241,4 +225,3 @@ void d_dump_db(float** db, int n, int k) {
     }
     printf("\n\n");
 }
-

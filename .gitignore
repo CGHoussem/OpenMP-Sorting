@@ -1,5 +1,16 @@
+# vscode files
 .vscode
-plots
+
+# python files
 venv
+
+# c files
 *.o
+program
+
+# plots files
+*.jpg
+
+# extra
+*.csv
 *.pdf
