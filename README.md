@@ -29,7 +29,9 @@ Use the MAKEFILE to build the project.
 Executing the C compiled object to extract the performances data into a csv file called 'performances.csv' in the same directory.
 ```bash
     $ cd TriParallele/src
-    $ ./program
+    
+    # ./program filename[.csv]
+    $ ./program performance.csv
 ```
 ***Note: The execution of the program might take a couple of hours depending on your machine.***
 

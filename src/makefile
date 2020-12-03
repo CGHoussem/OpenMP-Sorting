@@ -1,11 +1,17 @@
 CC = gcc
-CFLAGS = -std=c99
+CFLAGS = -std=c99 -Wall
 OBJS = utility.o main.o
 
 all: CFLAGS += -D DEBUG=0
 all: program
 
-debug: CFLAGS += -D DEBUG=1 -g -Wall -Werror
+O2: CFLAGS += -D DEBUG=0 -O2
+O2: program
+
+fast: CFLAGS += -D DEBUG=0 -Ofast
+fast: program
+
+debug: CFLAGS += -D DEBUG=1 -g -Og
 debug: program
 
 program: $(OBJS)

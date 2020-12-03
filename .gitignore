@@ -8,9 +8,6 @@ venv
 *.o
 program
 
-# plots files
-*.jpg
-
 # extra
 *.csv
 *.pdf

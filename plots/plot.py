@@ -7,8 +7,6 @@ import csv
 
 from collections import defaultdict
 
-from scipy.interpolate import splrep, splev
-
 """ Global Performance dictionnary structure (G_Perf)
     {
         'NxK 1': {
@@ -27,37 +25,34 @@ from scipy.interpolate import splrep, splev
 
 """ NK Performance dictionnary structure (NK_Perf)
     {
-        'generating': [],
-        'sorting': [],
-        'total': []
+        'Performance': [],
+        // I can add other measures like generating performance, etc..
     }
 """
 
-THREADS_ARR = [1, 2, 4, 8]
+THREADS_ARR = np.array(['1', '2', '4', '6', '8'])
 
 def draw_plot(n:int, k:int, nk:int, nk_perf:defaultdict):
     
     measure = 's'
 
-    m = max(nk_perf['sorting']) 
+    m = max(nk_perf['Performance']) 
     if m >= 120:
-        nk_perf['sorting'] = [x/60 for x in nk_perf['sorting']]
+        nk_perf['Performance'] = [x/60 for x in nk_perf['Performance']]
         measure = 'min'
     elif m < 1:
-        nk_perf['sorting'] = [x*1000 for x in nk_perf['sorting']]
+        nk_perf['Performance'] = [x*1000 for x in nk_perf['Performance']]
         measure = 'ms'
 
-    # plt.plot(THREADS_ARR, nk_perf['generating'], label='Generating')
-    rects = plt.bar(THREADS_ARR, nk_perf['sorting'], label='Sorting')
-    # plt.plot(THREADS_ARR, nk_perf['total'], label='Total')
-
+    rects = plt.bar(THREADS_ARR, nk_perf['Performance'], label='Performance')
 
     # for each rect annotate the performance attained
     for i, rect in enumerate(rects):
         x, y = rect.xy
         h = rect.get_height()
-        plt.annotate('%.2f %s' % (nk_perf['sorting'][i], measure), (x, h)) 
+        plt.annotate('%.2f %s' % (nk_perf['Performance'][i], measure), (x, h)) 
 
+    # plt.xticks(THREADS_ARR)
     plt.xlabel('Threads')
     plt.ylabel(f'Performance ({measure})')
     nk_cmp = 'N = K'
@@ -82,8 +77,8 @@ if __name__ == "__main__":
 
     g_perf = dict()
     
-    nk_var_counter = 0 # --> 4
-    nk_counter = 0 # --> 12
+    nk_var_counter = 0 # --> len(THREADS_ARR)
+    nk_counter = 0 # --> 3 * len(THREADS_ARR)
 
     with open(filename, 'r') as csvfile:
         data = csv.DictReader(csvfile, delimiter=',')
@@ -102,18 +97,16 @@ if __name__ == "__main__":
             if nk_var_counter == 1:
                 nk_perf = defaultdict(list)
 
-            # nk_perf['generating'].append(float(row['Generating']))
-            nk_perf['sorting'].append(float(row['Sorting']))
-            # nk_perf['total'].append(float(row['Total']))
+            nk_perf['Performance'].append(float(row['Performance']))
             
-            if nk_var_counter == 4:
+            if nk_var_counter == len(THREADS_ARR):
                 nk_var_counter = 0
                 nk_var[(n, k)] = nk_perf
             
             if len(nk_var) == 3:
                 g_perf[nk] = nk_var
                 
-            if nk_counter == 12:
+            if nk_counter == 3 * len(THREADS_ARR):
                 nk_counter = 0
 
 
