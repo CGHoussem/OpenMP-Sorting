@@ -111,8 +111,6 @@ void heap_sort(float** bloc, int bloc_size) {
  * @param k: The size of the array
  *****/
 void tri(float **bloc, int k){
-    // TODO: change to mergesort or heapsort or quicksort    
-    // selection_sort(bloc, k);
     heap_sort(bloc, k);
 }
 
@@ -190,6 +188,7 @@ void parallel_sort(float*** db, int n, int k, performance_measures* pm) {
     for (size_t j = 0; j < n; j++) {
         int bi = 1 + (j % 2);
         t1 = omp_get_wtime();
+        // firstprivate *db+min, *db+max ?? to secure data flow?
         #pragma omp parallel for firstprivate(bi, n, k)
         for (size_t i = 0; i < n/2; i++) {
             int b1 = (bi + 2 * i) % n;
