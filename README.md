@@ -1,4 +1,4 @@
-# Tri Parallele
+# Parallel Sorting (using: OpenMP)
 School project developed using C and Python.
 
 ## Installing dependencies for python plotting!
