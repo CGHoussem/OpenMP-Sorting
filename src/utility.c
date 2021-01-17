@@ -71,7 +71,7 @@ void heapify(float **bloc, int bloc_size, int i) {
         largest = l;
     
     // If right child is larger than largest so far
-    if (r < bloc_size && *(*bloc+r) > *(*bloc+largest))
+    if (r < bloc_size && **bloc+r > **bloc+largest)
         largest = r;
     
     // If largest is not root
@@ -188,7 +188,6 @@ void parallel_sort(float*** db, int n, int k, performance_measures* pm) {
     for (size_t j = 0; j < n; j++) {
         int bi = 1 + (j % 2);
         t1 = omp_get_wtime();
-        // firstprivate *db+min, *db+max ?? to secure data flow?
         #pragma omp parallel for firstprivate(bi, n, k)
         for (size_t i = 0; i < n/2; i++) {
             int b1 = (bi + 2 * i) % n;

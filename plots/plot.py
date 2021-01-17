@@ -7,6 +7,8 @@ import csv
 
 from collections import defaultdict
 
+from scipy.interpolate import make_interp_spline, BSpline
+
 """ Global Performance dictionnary structure (G_Perf)
     {
         'NxK 1': {
@@ -30,10 +32,9 @@ from collections import defaultdict
     }
 """
 
-THREADS_ARR = np.array(['1', '2', '4', '6', '8'])
+THREADS_ARR = np.array(['1', '2', '4', '8'])
 
-def draw_plot(n:int, k:int, nk:int, nk_perf:defaultdict):
-    
+def draw_bars(n:int, k:int, nk:int, nk_perf:defaultdict):
     measure = 's'
 
     m = max(nk_perf['Performance']) 
@@ -52,7 +53,7 @@ def draw_plot(n:int, k:int, nk:int, nk_perf:defaultdict):
         h = rect.get_height()
         plt.annotate('%.2f %s' % (nk_perf['Performance'][i], measure), (x, h)) 
 
-    # plt.xticks(THREADS_ARR)
+    plt.grid()
     plt.xlabel('Threads')
     plt.ylabel(f'Performance ({measure})')
     nk_cmp = 'N = K'
@@ -63,12 +64,11 @@ def draw_plot(n:int, k:int, nk:int, nk_perf:defaultdict):
     
     plt.title(f'N = {n} K = {k}  ({nk_cmp})\nNK = {nk}')
     
-    filename = f'{nk} - ({n},{k}).jpg'
+    filename = f'bars/{nk} - ({n},{k}).jpg'
     plt.figlegend()
     plt.savefig(filename)
     plt.clf()
     print(f'plot saved to {filename}')
-
 
 if __name__ == "__main__":
     
@@ -113,4 +113,4 @@ if __name__ == "__main__":
     for nk, g_perf_v in g_perf.items():
         for nk_var, nk_perf in g_perf_v.items():
             (n , k) = nk_var
-            draw_plot(n, k, nk, nk_perf)
+            draw_bars(n, k, nk, nk_perf)
